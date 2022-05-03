@@ -36,7 +36,7 @@ param natgwName string = 'nat${nameSuffix}'
 param pipName string = 'pip${nameSuffix}'
 
 @description('Name for KeyVault')
-param kvName string = 'kv${nameSuffix}'
+param kvName string = substring(toLower(replace('kv${nameSuffix}', '-', '')),0,24)
 
 @description('Name for Storage Account')
 // storage account names have additional restrictions
@@ -148,7 +148,6 @@ resource keyvault 'Microsoft.KeyVault/vaults@2021-10-01' = {
     }
   }
 }
-
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: aspName
