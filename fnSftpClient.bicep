@@ -1,28 +1,45 @@
-@description('Suffix added to default parameters for names for resources. This must be globally unique for some resources.')
+@description('Suffix added to default parameters for names for resources. Some resource names must be globally unique')
 param nameSuffix string = '${resourceGroup().name}${uniqueString(resourceGroup().id)}'
 
-@description('Location should be the same as the RG')
+@description('IP or FQDN for the SFTP server')
+// Can be set later by updating Function App Configuration Settings
+param sftpHost string = ''
+
+@description('Username for the SFTP server')
+// Can be set later by updating Function App Configuration Settings
+param sftpUsername string = ''
+
+// Can be set later by updating Function App Configuration Settings
+@description('Password for the SFTP server')
+@secure()
+param sftpPassword string = ''
+
+@description('Azure region for resources')
 param location string = resourceGroup().location
 
 @description('Name for VNet')
-param vnetName string = 'vnetSftpClient'
+param vnetName string = 'vnet${nameSuffix}'
 
 @description('Address space for VNet')
 param vnetAddressPrefix string = '10.10.0.0/16'
 
 @description('Name for SubNet for Function App')
-param subnetName string = 'subnetSftpClient'
+param subnetName string = 'sub${nameSuffix}'
 
 @description('Address prefix for subnet')
 param subnetAddressPrefix string = '10.10.1.0/24'
 
 @description('Name for NAT Gateway')
-param natgwName string = 'natSftpClient'
+param natgwName string = 'nat${nameSuffix}'
 
 @description('Name for outbound Public IP for NAT Gateway')
-param pipName string = 'pipSftpClient'
+param pipName string = 'pip${nameSuffix}'
+
+@description('Name for KeyVault')
+param kvName string = 'kv${nameSuffix}'
 
 @description('Name for Storage Account')
+// storage account names have additional restrictions
 param strgName string = substring(toLower(replace('strg${nameSuffix}', '-', '')),0,24)
 
 @description('SKU for Storage Account')
@@ -38,7 +55,7 @@ param storageSKU string = 'Standard_LRS'
 param fnNameSftp string = 'fn${nameSuffix}'
 
 @description('Name for App Service Plan')
-param aspName string = 'aspSftpClient'
+param aspName string = 'asp${nameSuffix}'
 
 @description('SKU for App Service Plan')
 @allowed([
@@ -72,7 +89,6 @@ resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   }
   kind: 'StorageV2'
   properties: {
-    accessTier: 'Hot'
     supportsHttpsTrafficOnly: true
     encryption: {
       keySource: 'Microsoft.Storage'
@@ -87,6 +103,53 @@ resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   }
 }
 
+resource keyvault 'Microsoft.KeyVault/vaults@2021-10-01' = {
+  name: kvName
+  location: location
+  properties: {
+    tenantId: subscription().tenantId
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    accessPolicies:[
+      {
+        // allow function app to get secret values
+        tenantId: subscription().tenantId
+        objectId: funcAppSftp.identity.principalId
+        permissions: {
+          secrets: [
+            'get'
+          ]
+        }
+      }
+    ]
+  }
+
+  resource secretAwjConn 'secrets@2021-10-01' = {
+    name: 'azurewebjobs-connstr'
+    properties: {
+      value: 'AccountName=${storage.name};AccountKey=${listKeys(storage.id, storage.apiVersion).keys[0].value};EndpointSuffix=${environment().suffixes.storage};DefaultEndpointsProtocol=https;'
+      contentType: 'string'
+      attributes: {
+        enabled: true
+      }
+    }
+  }
+
+  resource secretSftpPassword 'secrets@2021-10-01' = {
+    name: 'sftp-password'
+    properties: {
+      value: sftpPassword
+      contentType: 'string'
+      attributes: {
+        enabled: true
+      }
+    }
+  }
+}
+
+
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: aspName
   location: location
@@ -99,6 +162,9 @@ resource funcAppSftp 'Microsoft.Web/sites@2021-03-01' = {
   name: fnNameSftp
   location: location
   kind: 'functionapp'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties:{
     enabled: true
     serverFarmId: appServicePlan.id
@@ -108,7 +174,11 @@ resource funcAppSftp 'Microsoft.Web/sites@2021-03-01' = {
   resource funcAppConfig 'config@2021-03-01' = {
     name: 'appsettings'
     properties: {
-      AzureWebJobsStorage: 'AccountName=${storage.name};AccountKey=${listKeys(storage.id, storage.apiVersion).keys[0].value};DefaultEndpointsProtocol=https;EndpointSuffix=${environment().suffixes.storage};'
+      SFTP_HOST: sftpHost
+      SFTP_USERNAME: sftpUsername
+      // reference to key vault for use in func app settings. KeyVault URIs end with / for latest version 
+      SFTP_PASSWORD:       '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}/secrets/sftp-password/)'
+      AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}/secrets/azurewebjobs-connstr/)'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       FUNCTIONS_WORKER_RUNTIME: 'dotnet'
       WEBSITE_ENABLE_SYNC_UPDATE_SITE: 'true'

@@ -2,7 +2,9 @@
 
 Example of how to connect to an SFTP server that has IP restrictions from Azure Functions (C#).
 
-Uses a [NAT Gateway](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-nat-gateway) to assign a static outbound public IP address to the function app. This requires a Premium App Service Plan for the Function App. If the target SFTP server does not restrict inbound IP addresses, the NAT Gateway is not required. 
+Uses a [NAT Gateway](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-nat-gateway) to assign a static outbound public IP address to the function app. If the target SFTP server does not restrict inbound IP addresses, the NAT Gateway is not required. 
+
+NAT Gateway integration requires a **Premium** App Service Plan for the Function App which will incur costs.
 
 # Setup
 
@@ -12,7 +14,8 @@ Uses a [NAT Gateway](https://docs.microsoft.com/en-us/azure/azure-functions/func
 4. On the target SFTP server allow the Public IP address of the NAT Gateway 
 5. Call the function to test the connection to the SFTP server
 
-See `deployment.ps1` powershell script which automates most of the deployment.
+See `deployment.ps1` powershell script which automates the deployment.
+
 It requires:
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) 
 - [Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v4%2Cwindows%2Ccsharp%2Cportal%2Cbash#v2)
@@ -22,9 +25,10 @@ With demo server:
 ```
 powershell .\deployment.ps1 -resourceGroupName <RESOURCE_GROUP> -location <LOCATION> -functionAppName <FUNCTIONAPP_NAME> -includeDemoServer -resourceGroupServerName <DEMO_SERVER_RESOURCE_GROUP> -sftpUsername <USERNAME> -sftpPassword <PASSWORD>
 ```
+
 Without demo server:
 ```
-powershell .\deployment.ps1 -resourceGroupName <RESOURCE_GROUP> -location <LOCATION> -functionAppName <FUNCTIONAPP_NAME> -serverAddress <SFTP_SERVER_ADDRESS> -sftpUsername <USERNAME> -sftpPassword <PASSWORD>
+powershell .\deployment.ps1 -resourceGroupName <RESOURCE_GROUP> -location <LOCATION> -functionAppName <FUNCTIONAPP_NAME> -sftpHost <SFTP_SERVER_ADDRESS> -sftpUsername <USERNAME> -sftpPassword <PASSWORD>
 ```
 
 The script has a number of steps and outputs loads of text. Wait until you see 'Done!' in the powershell script output before testing anything. 
@@ -36,23 +40,26 @@ For more info see [Bicep Quickstart](https://docs.microsoft.com/en-us/azure/azur
 
 # Run the function
 
-If you didn't use the deployment script, you'll need to set the following app settings in the function app config:
+Ensure the following app settings are correct in the function app config:
 
 - SFTP_HOST
 - SFTP_USERNAME
 - SFTP_PASSWORD
 
-> For production use, store the SFTP secrets and AzureWebJobsStorage string in Key Vault, not Function App config. 
+Get the URLs for the function app from the output of the deployment templates or the Azure Portal for these functions:
 
-Get the URLs for the function app from the output of the deployment templates or the Azure Portal. 
+1. sftpListDir - connect to the SFTP server and return a directory listing
+2. ipEcho - return the outbound IP address of the function
 
-There are two functions with URLs similar to the below:
+The function URI and access codes below are examples, yours will be different.
 
-sftpListDir: https://functionAppName.azurewebsites.net/api/sftplistdir/{*directorypath}?code=slkfjsaldkfj
+1. sftpListDir: `https://functionAppName.azurewebsites.net/api/sftplistdir/{*directorypath}?code=slkfjsaldkfj`
 
-Delete `{*directorypath}` and optionally replace it with the path to the directory on the SFTP server you wish to list. Call this URL in your browser and you should see the directory listing if everything's working. 
+Delete `{*directorypath}` and optionally replace it with the path to the directory on the SFTP server you wish to list. Call this URL in your browser and you should see the directory listing if everything's working. For example, to list the `usr` directory: `https://functionAppName.azurewebsites.net/api/sftplistdir/usr/?code=slkfjsaldkfj`
 
-To confirm the outbound IP address the function is using, test call the function ipEcho, which returns the outbound IP address of the function. This should match the outbound IP attached to the NAT gateway.
+2. ipEcho: `https://functionAppName.azurewebsites.net/api/ipEcho?code=slkfjsaldkfj`
+
+To confirm the outbound IP address the function is using, call the function ipEcho URL in your browser. The IP address returned should match the outbound IP attached to the NAT gateway.
 
 # Demo Server
 

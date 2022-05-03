@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Renci.SshNet;
 
 // Lists files in remote directory on SFTP server
+// in the URL route replace `{*directoryPath}` with the path on the SFTP server
+// eg: to list the `home` directory: https://functionAppName.azurewebsites.net/api/sftplistdir/home?code=slkfjsaldkfj
 namespace stu0292.Sftp
 {
     public static class sftpListDir
@@ -64,6 +66,7 @@ namespace stu0292.Sftp
                 return new OkObjectResult(responseMessage);
             }
             catch (Exception e)
+            // FIXME: don't catch generic exceptions
             {
                 log.LogError(e.ToString());
                 return new NotFoundObjectResult(e.ToString());

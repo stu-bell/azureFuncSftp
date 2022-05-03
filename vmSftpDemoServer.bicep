@@ -1,5 +1,5 @@
 // https://docs.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-bicep?tabs=CLI
-@description('Suffix added to default parameters for names for resources. This must be globally unique for some resources')
+@description('Suffix added to default parameters for names for resources. Some resource names must be globally unique')
 param nameSuffix string = '${resourceGroup().name}${uniqueString(resourceGroup().id)}'
 
 @description('Username for the Virtual Machine.')
@@ -23,7 +23,7 @@ param sourceIpAddressPrefix string //= '*'
 param vmName string = 'vm${nameSuffix}'
 
 @description('Unique DNS Name for the Public IP used to access the Virtual Machine.')
-param dnsLabelPrefix string = toLower('dns-${vmName}')
+param dnsLabelPrefix string = toLower('dns${vmName}')
 
 @description('The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version.')
 @allowed([
@@ -41,19 +41,19 @@ param location string = resourceGroup().location
 param vmSize string = 'Standard_B2s'
 
 @description('Name for the VNET')
-param virtualNetworkName string = 'vnetSftpDemoServer'
+param virtualNetworkName string = 'vnet${nameSuffix}'
 
 @description('Name for the subnet in the virtual network')
-param subnetName string = 'subSftpDemoServer'
+param subnetName string = 'sub${nameSuffix}'
 
 @description('Name for the Network Security Group')
-param networkSecurityGroupName string = 'nsgSftpDemoServer'
+param networkSecurityGroupName string = 'nsg${nameSuffix}'
 
 @description('Name for the Public IP for the VM')
-param publicIPAddressName string = 'pipSftpDemoServer'
+param pipName string = 'pip${nameSuffix}'
 
 @description('Name for the NIC for the VM')
-param networkInterfaceName string = 'nicSftpDemoServer'
+param networkInterfaceName string = 'nic${nameSuffix}'
 
 var osDiskType = 'Standard_LRS'
 var subnetAddressPrefix = '10.1.0.0/24'
@@ -139,7 +139,7 @@ resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
 }
 
 resource publicIP 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
-  name: publicIPAddressName
+  name: pipName
   location: location
   sku: {
     name: 'Basic'
