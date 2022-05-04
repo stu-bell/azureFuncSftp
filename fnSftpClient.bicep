@@ -59,28 +59,10 @@ param fnNameSftp string = 'fn${nameSuffix}'
 param aspName string = 'asp${nameSuffix}'
 
 @description('SKU for App Service Plan')
-@allowed([
-  'Standard'
-  'ElasticPremium'
-])
-param fnSKU string = 'ElasticPremium'
-
-var aspSkuOptions = {
-  Standard: {
-    name: 'S1'
-    tier: 'Standard'
-    size: 'S1'
-    family: 'S'
-    capacity: 1
-  }
-  ElasticPremium: {
-    name: 'EP1'
-    tier: 'ElasticPremium'
-    size: 'EP1'
-    family: 'EP'
-    capacity: 1
-  }
-}
+@metadata({
+  link: 'https://azure.microsoft.com/en-gb/pricing/details/app-service/windows/'
+})
+param aspSkuName string = 'P1v3'
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   name: strgName
@@ -153,7 +135,9 @@ resource keyvault 'Microsoft.KeyVault/vaults@2021-10-01' = {
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: aspName
   location: location
-  sku: aspSkuOptions[fnSKU]
+  sku: {
+    name: aspSkuName
+  }
   kind: 'elastic'
 }
 
