@@ -179,6 +179,8 @@ resource funcAppSftp 'Microsoft.Web/sites@2021-03-01' = {
       // reference to key vault for use in func app settings. KeyVault URIs end with / for latest version 
       SFTP_PASSWORD:       '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}secrets/sftp-password/)'
       AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}secrets/azurewebjobs-connstr/)'
+      WEBSITE_CONTENTAZUREFILECONNECTIONSTRING:  '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}secrets/azurewebjobs-connstr/)'
+      WEBSITE_CONTENTSHARE: funcAppSftp.name
       FUNCTIONS_EXTENSION_VERSION: '~4'
       FUNCTIONS_WORKER_RUNTIME: 'dotnet'
       WEBSITE_ENABLE_SYNC_UPDATE_SITE: 'true'
