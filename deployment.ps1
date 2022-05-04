@@ -34,10 +34,17 @@ Param(
 $pipClient='pipSftpClient'
 $pipServer='pipSftpServer'
 
+# main resources
 Write-Host 'Deploying Resource Group...'
 az group create --name $resourceGroupName --location $location
 Write-Host 'Deploying FunctionApp and Network Resources...'
 az deployment group create --resource-group $resourceGroupName --template-file fnSftpClient.bicep --parameters fnNameSftp=$functionAppName sftpHost=$sftpHost sftpUsername=$sftpUsername sftpPassword=$sftpPassword pipName=$pipClient
+
+# deploy the function app code
+Write-Host 'Deploying Function App...'
+Set-Location FunctionApp
+func azure functionapp publish $functionAppName --csharp
+Set-Location ..
 
 # Get Public IP address of NAT Gateway
 $natIpAddress = $(az network public-ip show --resource-group $resourceGroupName --name $pipClient --query 'ipAddress')
@@ -51,18 +58,12 @@ if ($includeDemoServer){
     az deployment group create --resource-group $resourceGroupServerName --template-file vmSftpDemoServer.bicep --parameters adminUsername=$sftpUsername adminPasswordOrKey=$sftpPassword sourceIpAddressPrefix=$natIpAddress pipName=$pipServer
     # get public IP address of the server for the function app config later
     $sftpHost=$(az network public-ip show --resource-group $resourceGroupServerName --name $pipServer --query 'ipAddress')
+    # Update the function settings to include the server address
+    az functionapp config appsettings set --name $functionAppName --resource-group $resourceGroupName --settings SFTP_HOST=$sftpHost
+    # List functionapp urls again...
+    func azure functionapp list-functions $functionAppName --show-keys
 }
 
-# deploy the function app code
-Write-Host 'Deploying Function App...'
-Set-Location FunctionApp
-func azure functionapp publish $functionAppName --csharp
-Set-Location ..
-
-# Update the function settings to include the server address
-az functionapp config appsettings set --name $functionAppName --resource-group $resourceGroupName --settings SFTP_HOST=$sftpHost
-
 # Output the function URLs, outbound IP
-func azure functionapp list-functions $functionAppName --show-keys
 Write-Host "NAT Gateway Outbound IP: ${natIpAddress}"
 Write-Host "Done!"
