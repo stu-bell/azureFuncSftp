@@ -155,6 +155,13 @@ resource funcAppSftp 'Microsoft.Web/sites@2021-03-01' = {
     virtualNetworkSubnetId: '${vnet.id}/subnets/${subnetName}'
   }
 
+  resource funcAppConfigWeb 'config@2021-03-01' = {
+    name: 'web'
+    properties: {
+      alwaysOn: true
+    }
+  }
+
   resource funcAppConfig 'config@2021-03-01' = {
     name: 'appsettings'
     properties: {
