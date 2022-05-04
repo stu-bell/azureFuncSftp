@@ -36,10 +36,11 @@ param natgwName string = 'nat${nameSuffix}'
 param pipName string = 'pip${nameSuffix}'
 
 @description('Name for KeyVault')
-param kvName string = take(toLower(replace('kv${nameSuffix}', '-', '')),24)
+// key vault names max 24 chars 
+param kvName string = take('kv${nameSuffix}', 24)
 
 @description('Name for Storage Account')
-// storage account names have additional restrictions
+// storage account names have additional restrictions - max 24 chars, lowercase letters and numbers
 param strgName string = take(toLower(replace('strg${nameSuffix}', '-', '')),24)
 
 @description('SKU for Storage Account')
