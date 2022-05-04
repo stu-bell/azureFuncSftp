@@ -67,6 +67,12 @@ If using the demo server, you can set the allowed inbound IP address in the Netw
 
 ![NSG Rules](./NetworkSecurityGroup.png)
 
+# Azure Storage as an SFTP service
+
+You can also demo this by using [SFTP support for Azure Storage](https://docs.microsoft.com/en-us/azure/storage/blobs/secure-file-transfer-protocol-support-how-to?tabs=azure-portal) which is in preview. For this to work with network restrictions, the Storage account must be deployed in a [different region](https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal#grant-access-from-an-internet-ip-range) from the Azure Function/NAT Gateway resources. 
+
+Under the Networking blade of the Storage account, choose public access from selected networks and add the IP addess of the NAT Gateway to the allow list. 
+
 # Clean up resources
 
 Delete the resources for the function app client and, if you set one up, the demo server:
