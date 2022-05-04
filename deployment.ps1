@@ -50,7 +50,7 @@ if ($includeDemoServer){
     # set the username, password and pass the NAT IP address to the template parameters
     az deployment group create --resource-group $resourceGroupServerName --template-file vmSftpDemoServer.bicep --parameters adminUsername=$sftpUsername adminPasswordOrKey=$sftpPassword sourceIpAddressPrefix=$natIpAddress pipName=$pipServer
     # get public IP address of the server for the function app config later
-    $serverAddress=$(az network public-ip show --resource-group $resourceGroupServerName --name $pipServer --query 'ipAddress')
+    $sftpHost=$(az network public-ip show --resource-group $resourceGroupServerName --name $pipServer --query 'ipAddress')
 }
 
 # deploy the function app code
@@ -60,7 +60,7 @@ func azure functionapp publish $functionAppName --csharp
 Set-Location ..
 
 # Update the function settings to include the server address
-az functionapp config appsettings set --name $functionAppName --resource-group $resourceGroupName --settings SFTP_HOST=$serverAddress
+az functionapp config appsettings set --name $functionAppName --resource-group $resourceGroupName --settings SFTP_HOST=$sftpHost
 
 # Output the function URLs, outbound IP
 func azure functionapp list-functions $functionAppName --show-keys
