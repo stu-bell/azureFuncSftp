@@ -36,11 +36,11 @@ param natgwName string = 'nat${nameSuffix}'
 param pipName string = 'pip${nameSuffix}'
 
 @description('Name for KeyVault')
-param kvName string = substring(toLower(replace('kv${nameSuffix}', '-', '')),0,24)
+param kvName string = take(toLower(replace('kv${nameSuffix}', '-', '')),24)
 
 @description('Name for Storage Account')
 // storage account names have additional restrictions
-param strgName string = substring(toLower(replace('strg${nameSuffix}', '-', '')),0,24)
+param strgName string = take(toLower(replace('strg${nameSuffix}', '-', '')),24)
 
 @description('SKU for Storage Account')
 @allowed([
@@ -176,8 +176,8 @@ resource funcAppSftp 'Microsoft.Web/sites@2021-03-01' = {
       SFTP_HOST: sftpHost
       SFTP_USERNAME: sftpUsername
       // reference to key vault for use in func app settings. KeyVault URIs end with / for latest version 
-      SFTP_PASSWORD:       '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}/secrets/sftp-password/)'
-      AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}/secrets/azurewebjobs-connstr/)'
+      SFTP_PASSWORD:       '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}secrets/sftp-password/)'
+      AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyvault.properties.vaultUri}secrets/azurewebjobs-connstr/)'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       FUNCTIONS_WORKER_RUNTIME: 'dotnet'
       WEBSITE_ENABLE_SYNC_UPDATE_SITE: 'true'
